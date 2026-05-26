@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+ui/dist/
+ui/release/
+
+# Environment
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+*.log
+npm-debug.log*

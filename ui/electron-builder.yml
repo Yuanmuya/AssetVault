@@ -1,0 +1,110 @@
+# electron-builder configuration
+# See https://www.electron.build/configuration/configuration
+
+appId: com.asset-librarian.app
+productName: Asset Librarian
+copyright: "Copyright © 2026 Asset Librarian Team"
+
+# ── Directories ──
+directories:
+  output: release
+  buildResources: build-resources
+
+# ── Files to include ──
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+
+# ── Extra resources bundled alongside the app ──
+# Python scripts, Blender scripts, test fixtures, viewer
+extraResources:
+  - from: ../scripts
+    to: scripts
+    filter:
+      - "*.py"
+      - "*.bat"
+  - from: ../blender_scripts
+    to: blender_scripts
+    filter:
+      - "*.py"
+  - from: ../viewer
+    to: viewer
+    filter:
+      - index.html
+      - package.json
+  - from: ../SKILL.md
+    to: SKILL.md
+
+# ── Asar packing ──
+asar: true
+
+# ── Windows (NSIS installer) ──
+win:
+  signAndEditExecutable: false
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build-resources/icon.ico
+  artifactName: "${productName}-Setup-${version}-win-x64.${ext}"
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Asset Librarian
+  uninstallDisplayName: "Asset Librarian ${version}"
+  installerIcon: build-resources/icon.ico
+  uninstallerIcon: build-resources/icon.ico
+  installerHeaderIcon: build-resources/icon.ico
+
+# ── macOS ──
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: build-resources/icon.icns
+  category: public.app-category.graphics-design
+  artifactName: "${productName}-${version}-mac-${arch}.${ext}"
+  hardenedRuntime: true
+  gatekeeperAssess: false
+
+dmg:
+  title: "Asset Librarian ${version}"
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# ── Linux ──
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  icon: build-resources
+  category: Graphics
+  artifactName: "${productName}-${version}-linux-${arch}.${ext}"
+
+# ── Auto-update ──
+publish:
+  provider: generic
+  url: https://releases.asset-librarian.com
+  channel: latest
+  # For GitHub releases:
+  # provider: github
+  # owner: asset-librarian
+  # repo: asset-librarian
+  # releaseType: release

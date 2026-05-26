@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asset Librarian — 3D Viewer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #eee; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
+  #canvas-container { width: 100vw; height: 100vh; display: block; }
+  #drop-zone {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  #drop-zone.drag-over { background: rgba(100, 140, 255, 0.15); }
+  #drop-zone h1 { font-size: 2rem; font-weight: 300; margin-bottom: 0.5rem; }
+  #drop-zone p { opacity: 0.6; font-size: 0.9rem; }
+  #drop-zone.hidden { opacity: 0; pointer-events: none; }
+  #info {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(8px);
+    padding: 10px 20px; border-radius: 8px; font-size: 0.8rem;
+    text-align: center; min-width: 200px;
+  }
+  #controls {
+    position: absolute; top: 16px; right: 16px;
+    display: flex; gap: 8px;
+  }
+  .btn {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; padding: 8px 14px; border-radius: 6px;
+    cursor: pointer; font-size: 0.8rem; backdrop-filter: blur(4px);
+    transition: background 0.15s;
+  }
+  .btn:hover { background: rgba(255,255,255,0.2); }
+  #file-input { display: none; }
+  #stats { font-size: 0.75rem; opacity: 0.5; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div id="drop-zone">
+  <h1>📦 Asset Librarian</h1>
+  <p>Drop a .glb / .gltf / .obj / .fbx file here to preview</p>
+</div>
+
+<div id="controls">
+  <button class="btn" id="open-btn">📂 Open</button>
+  <button class="btn" id="auto-rotate-btn">🔄 Auto</button>
+  <button class="btn" id="reset-btn">🏠 Reset</button>
+</div>
+<input type="file" id="file-input" accept=".glb,.gltf,.obj,.fbx">
+
+<div id="info">
+  <div id="model-name">No model loaded</div>
+  <div id="stats">Drag & drop or click Open</div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./node_modules/three/build/three.module.js",
+    "three/addons/": "./node_modules/three/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+// ── Scene ──
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+
+// ── Camera ──
+const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 1000);
+camera.position.set(3, 2, 5);
+
+// ── Renderer ──
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+container.appendChild(renderer.domElement);
+
+// ── Controls ──
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.autoRotate = false;
+controls.autoRotateSpeed = 2.0;
+controls.target.set(0, 0, 0);
+controls.update();
+
+// ── Lighting ──
+const envLight = new THREE.HemisphereLight(0x87ceeb, 0x3a3a5c, 0.8);
+scene.add(envLight);
+
+const mainLight = new THREE.DirectionalLight(0xffeedd, 2.0);
+mainLight.position.set(5, 8, 6);
+mainLight.castShadow = true;
+scene.add(mainLight);
+
+const fillLight = new THREE.DirectionalLight(0x4488ff, 0.6);
+fillLight.position.set(-4, 3, -5);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+rimLight.position.set(-2, -1, 8);
+scene.add(rimLight);
+
+// Ground grid
+const gridHelper = new THREE.GridHelper(10, 20, 0x444488, 0x333366);
+gridHelper.position.y = -1;
+scene.add(gridHelper);
+
+// Ground shadow plane (invisible)
+const groundGeo = new THREE.PlaneGeometry(20, 20);
+const groundMat = new THREE.ShadowMaterial({ opacity: 0.4 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.99;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// ── Loaders ──
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('./node_modules/three/examples/jsm/libs/draco/');
+const ktx2Loader = new KTX2Loader();
+ktx2Loader.setTranscoderPath('./node_modules/three/examples/jsm/libs/basis/');
+
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
+gltfLoader.setKTX2Loader(ktx2Loader);
+gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+const objLoader = new OBJLoader();
+const mtlLoader = new MTLLoader();
+const fbxLoader = new FBXLoader();
+
+let currentModel = null;
+
+// ── Auto-fit ──
+function fitCamera(object) {
+  const box = new THREE.Box3().setFromObject(object);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+
+  const dist = maxDim * 1.8;
+  const camPos = new THREE.Vector3(dist * 0.6, dist * 0.4, dist);
+  camera.position.copy(camPos);
+  controls.target.copy(center);
+  controls.update();
+}
+
+// ── Load file ──
+function loadModel(path, name) {
+  // Clear previous
+  if (currentModel) {
+    scene.remove(currentModel);
+    currentModel = null;
+  }
+
+  const ext = path.split('.').pop().toLowerCase();
+  document.getElementById('model-name').textContent = name || path.split('/').pop() || 'Unknown';
+  document.getElementById('drop-zone').classList.add('hidden');
+
+  const onLoaded = (object) => {
+    object.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    currentModel = object;
+    scene.add(object);
+    fitCamera(object);
+    const verts = countVertices(object);
+    document.getElementById('stats').textContent = `Loaded • ${verts.toLocaleString()} vertices`;
+  };
+
+  const onError = (err) => {
+    console.error('Load error:', err);
+    document.getElementById('stats').textContent = `❌ Failed to load: ${err.message || err}`;
+  };
+
+  if (ext === 'glb' || ext === 'gltf') {
+    gltfLoader.load(path, (gltf) => onLoaded(gltf.scene), undefined, onError);
+  } else if (ext === 'obj') {
+    // Try MTL with same base name
+    const mtlPath = path.replace(/\.obj$/i, '.mtl');
+    fetch(mtlPath)
+      .then(r => {
+        if (r.ok) {
+          mtlLoader.load(mtlPath, (materials) => {
+            materials.preload();
+            objLoader.setMaterials(materials);
+            objLoader.load(path, onLoaded, undefined, onError);
+          });
+        } else {
+          objLoader.load(path, onLoaded, undefined, onError);
+        }
+      })
+      .catch(() => objLoader.load(path, onLoaded, undefined, onError));
+  } else if (ext === 'fbx') {
+    fbxLoader.load(path, onLoaded, undefined, onError);
+  }
+}
+
+function countVertices(obj) {
+  let count = 0;
+  obj.traverse(child => {
+    if (child.isMesh && child.geometry) {
+      const attr = child.geometry.getAttribute('position');
+      if (attr) count += attr.count;
+    }
+  });
+  return count;
+}
+
+// ── Drag & Drop ──
+const dropZone = document.getElementById('drop-zone');
+
+document.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+document.addEventListener('dragleave', (e) => {
+  if (!e.relatedTarget || e.relatedTarget === document.documentElement) {
+    dropZone.classList.remove('drag-over');
+  }
+});
+document.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    const file = files[0];
+    const url = URL.createObjectURL(file);
+    loadModel(url, file.name);
+  }
+});
+
+// ── Open file dialog ──
+document.getElementById('open-btn').addEventListener('click', () => {
+  document.getElementById('file-input').click();
+});
+document.getElementById('file-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const url = URL.createObjectURL(file);
+    loadModel(url, file.name);
+  }
+});
+
+// ── Auto-rotate toggle ──
+document.getElementById('auto-rotate-btn').addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate;
+  document.getElementById('auto-rotate-btn').textContent = controls.autoRotate ? '⏸ Pause' : '🔄 Auto';
+});
+
+// ── Reset view ──
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if (currentModel) fitCamera(currentModel);
+});
+
+// ── Resize ──
+window.addEventListener('resize', () => {
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+
+// ── Animate ──
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+console.log('📦 Asset Librarian viewer ready — drop a model to preview');
+</script>
+</body>
+</html>
