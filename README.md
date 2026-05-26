@@ -11,25 +11,33 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+[**English README**](./README.en.md)
+
+---
+
+## 📋 目录
+
+- [功能特性](#-功能特性)
+- [项目结构](#-项目结构)
+- [快速开始](#-快速开始)
+- [贴图检测规则](#-贴图检测规则)
+- [数据库 Schema](#-数据库-schema)
+- [技术栈](#-技术栈)
+- [测试](#-测试)
+- [更新日志](#-更新日志)
+- [许可证](#-许可证)
+
 ---
 
 ## ✨ 功能特性
 
 ### 🖥️ 桌面应用 (Electron + React)
 
-- **数据库管理** — 打开/创建 SQLite 数据库，管理 3D 资产目录
+- **数据库管理** — 打开 SQLite 数据库，管理 3D 资产目录
 - **缩略图网格** — 以网格视图浏览所有资产，支持搜索与筛选
-- **3D 模型预览** — 内置 Three.js 高精度预览器，支持：
-  - FBX / OBJ / GLTF / GLB / USD 格式加载
-  - 轨道控制器（旋转/平移/缩放）
-  - 材质通道可视化（Base Color、Normal、Roughness、Metallic、AO 等）
-  - 线框模式、顶点法线可视化
-  - Matcap 材质预览
-  - 骨骼权重可视化
-  - 工作室 HDR 环境光照
-  - 自定义背景色
+- **3D 模型预览** — 内置 Three.js 高精度预览器，支持 FBX / OBJ / GLTF / GLB / USD 格式加载，支持轨道控制、材质通道可视化、线框模式、顶点法线、Matcap、骨骼权重、HDR 环境光照
 - **搜索与筛选** — 按文件名、格式、缺失贴图等条件快速筛选
-- **统计面板** — 资产总数、格式分布、贴图缺失统计一目了然
+- **统计面板** — 资产总数、格式分布、贴图缺失统计
 - **扫描覆盖层** — 实时显示扫描进度与日志
 - **文件夹监控** — 监控指定目录，资产变更自动刷新
 - **拖拽导入** — 拖拽模型文件或数据库文件快速打开
@@ -43,7 +51,7 @@
 | `scripts/create_thumbnails.py` | 调用 Blender 批量生成缩略图 |
 | `scripts/validate_assets.py` | 验证资产完整性（贴图缺失检测） |
 | `scripts/audit.py` | 资产审计报告 |
-| `scripts/audit_deep.py` | 深度资产审计（文件结构与元数据） |
+| `scripts/audit_deep.py` | 深度资产审计 |
 | `scripts/report.py` | 生成统计报告 |
 | `scripts/check_schema.py` | 检查数据库表结构 |
 | `scripts/texture_analyzer.py` | 贴图文件分析 |
@@ -60,7 +68,7 @@
 
 ### 👁️ 独立 3D 查看器
 
-`viewer/` 目录下提供基于 Three.js 的纯前端 3D 模型查看器（无需 Electron）。
+`viewer/` 目录下提供基于 Three.js 的纯前端 3D 模型查看器（无需 Electron），可直接在浏览器中打开使用。
 
 ---
 
@@ -98,16 +106,16 @@ AssetVault/
 │   ├── src/                  # React 前端
 │   │   ├── App.jsx           # 主应用组件
 │   │   ├── main.jsx          # 入口
-│   │   ├── components/       # UI 组件
-│   │   │   ├── ThumbnailGrid.jsx    # 缩略图网格
-│   │   │   ├── ModelViewer3D.jsx    # 3D 模型预览
-│   │   │   ├── SidePanel.jsx        # 右侧详情面板
-│   │   │   ├── SearchBar.jsx        # 搜索栏
-│   │   │   ├── StatsBar.jsx         # 统计栏
-│   │   │   ├── ScanOverlay.jsx      # 扫描覆盖层
-│   │   │   ├── WatchBar.jsx         # 监控栏
-│   │   │   ├── DropZone.jsx         # 拖拽区域
-│   │   │   └── ModelCard.jsx        # 模型卡片
+│   │   └── components/       # UI 组件
+│   │       ├── ThumbnailGrid.jsx    # 缩略图网格
+│   │       ├── ModelViewer3D.jsx    # 3D 模型预览
+│   │       ├── SidePanel.jsx        # 右侧详情面板
+│   │       ├── SearchBar.jsx        # 搜索栏
+│   │       ├── StatsBar.jsx         # 统计栏
+│   │       ├── ScanOverlay.jsx      # 扫描覆盖层
+│   │       ├── WatchBar.jsx         # 监控栏
+│   │       ├── DropZone.jsx         # 拖拽区域
+│   │       └── ModelCard.jsx        # 模型卡片
 │   │   └── styles/           # 样式文件
 │   ├── build-resources/      # 构建资源（图标等）
 │   ├── vite.config.js        # Vite 配置
@@ -115,7 +123,9 @@ AssetVault/
 │   └── package.json          # 依赖管理
 ├── viewer/                   # 独立 3D 查看器
 ├── UpdateLog/                # 开发更新日志
-└── test-fixtures/            # 测试资源
+├── test-fixtures/            # 测试资源
+├── README.md                 # 中文说明
+└── README.en.md              # 英文说明
 ```
 
 ---
@@ -140,7 +150,7 @@ npm install
 npm run dev
 
 # 3. 或者分别启动
-npm run dev:renderer   # 仅启动 Vite 前端
+npm run dev:renderer   # 仅启动 Vite 前端（端口 5173）
 npm run dev:electron   # 仅启动 Electron（需先启动 Vite）
 ```
 
@@ -149,17 +159,23 @@ npm run dev:electron   # 仅启动 Electron（需先启动 Vite）
 ```bash
 cd ui
 
-# Windows
+# Windows 安装包
 npm run build
 
-# macOS
+# macOS 安装包
 npm run build:mac
 
-# Linux
+# Linux 安装包
 npm run build:linux
 
 # 全平台
 npm run build:all
+
+# 打包为可执行目录（不生成安装包）
+npm run pack
+
+# 构建并发布
+npm run dist
 ```
 
 ### Python 脚本使用
@@ -184,13 +200,13 @@ python scripts/validate_assets.py --scan-root /path/to/assets
 
 脚本根据文件名关键词自动识别贴图类型（不区分大小写）：
 
-| 贴图类型 | 关键词 |
-|---------|--------|
+| 贴图类型 | 匹配关键词 |
+|---------|-----------|
 | Albedo / Diffuse | `albedo`, `diffuse`, `diff`, `basecolor`, `base_color`, `col` |
 | Normal | `normal`, `nrm`, `nml` |
 | Roughness | `roughness`, `rough`, `rgh` |
 | Metallic | `metallic`, `metal`, `met` |
-| AO | `ao`, `ambient_occlusion`, `occlusion` |
+| AO (Ambient Occlusion) | `ao`, `ambient_occlusion`, `occlusion` |
 | Displacement / Height | `displacement`, `disp`, `height`, `hgt` |
 | Specular | `specular`, `spec`, `spc` |
 | Glossiness | `glossiness`, `gloss`, `gls` |
@@ -198,13 +214,13 @@ python scripts/validate_assets.py --scan-root /path/to/assets
 | Emission | `emission`, `emissive`, `emit`, `em`, `glow` |
 | Subsurface | `sss`, `subsurface`, `subdermal` |
 
-贴图位于模型同级目录或 `textures/` 子目录中时自动匹配。
+贴图位于模型同级目录或 `textures/` 子目录中时自动关联到对应模型。
 
 ---
 
 ## 🗄️ 数据库 Schema
 
-SQLite 数据库包含以下表：
+SQLite 数据库包含以下三张表：
 
 ### `models` 表
 
@@ -214,8 +230,8 @@ SQLite 数据库包含以下表：
 | `file_path` | TEXT | 模型文件完整路径 |
 | `file_name` | TEXT | 文件名 |
 | `format` | TEXT | 格式（fbx / obj / glb / gltf） |
-| `file_size_bytes` | INTEGER | 文件大小 |
-| `last_modified` | TEXT | 最后修改时间 |
+| `file_size_bytes` | INTEGER | 文件大小（字节） |
+| `last_modified` | TEXT | 最后修改时间（ISO 时间戳） |
 | `scan_timestamp` | TEXT | 扫描时间戳 |
 | `variant` | TEXT | LOD/变体标签 |
 
@@ -226,7 +242,7 @@ SQLite 数据库包含以下表：
 | `id` | INTEGER | 主键（自增） |
 | `model_id` | INTEGER | 外键 → models.id |
 | `file_path` | TEXT | 贴图文件路径 |
-| `map_type` | TEXT | 贴图类型 |
+| `map_type` | TEXT | 贴图类型（albedo / normal / roughness 等） |
 | `width` | INTEGER | 像素宽度 |
 | `height` | INTEGER | 像素高度 |
 
@@ -247,22 +263,26 @@ SQLite 数据库包含以下表：
 | 层级 | 技术 |
 |------|------|
 | **桌面框架** | Electron 42 |
-| **前端** | React 18, Vite 6 |
-| **3D 渲染** | Three.js 0.184 (GLTFLoader, FBXLoader, OBJLoader, USDLoader) |
-| **数据库** | sql.js (SQLite WebAssembly) |
-| **打包** | electron-builder (NSIS) |
+| **前端框架** | React 18, Vite 6 |
+| **3D 渲染** | Three.js 0.184 |
+| **模型加载** | GLTFLoader, FBXLoader, OBJLoader, USDLoader |
+| **数据库** | sql.js（SQLite WebAssembly） |
+| **打包工具** | electron-builder（NSIS） |
 | **自动更新** | electron-updater |
-| **脚本** | Python 3.10+, Blender 4.5+ |
+| **脚本语言** | Python 3.10+ |
+| **缩略图渲染** | Blender 4.5+ |
 
 ---
 
 ## 🧪 测试
 
+项目包含测试数据库和冒烟测试脚本：
+
 ```bash
 # 运行冒烟测试
 python scripts/test_smoke.py
 
-# 使用测试数据库
+# 测试数据库位于
 ui/test-fixtures/asset_librarian.db
 ```
 
@@ -270,13 +290,13 @@ ui/test-fixtures/asset_librarian.db
 
 ## 📝 更新日志
 
-详见 [UpdateLog/](UpdateLog/) 目录。
+详见 [UpdateLog/](./UpdateLog/) 目录。
 
 ---
 
 ## 📄 许可证
 
-本项目基于 MIT 许可证开源。
+本项目基于 **MIT 许可证** 开源。
 
 ---
 
@@ -287,3 +307,4 @@ ui/test-fixtures/asset_librarian.db
 - [React](https://react.dev/) — UI 组件库
 - [sql.js](https://sql.js.org/) — WASM 驱动的 SQLite
 - [Blender](https://www.blender.org/) — 开源 3D 创作套件
+- [Vite](https://vitejs.dev/) — 快速的前端构建工具
